@@ -3,7 +3,7 @@
 	public class PartModel
 	{
 		public int PartId { get; set; }
-		public string PartCategory { get; set; } = string.Empty;
+		public int PartCategoryId { get; set; }
 		public string PartName { get; set; } = string.Empty;
 	}
 }
