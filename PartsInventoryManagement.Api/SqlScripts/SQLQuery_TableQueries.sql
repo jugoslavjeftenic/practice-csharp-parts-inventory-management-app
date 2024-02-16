@@ -1,9 +1,11 @@
+
 SELECT
+    [InventoryId],
     [PartId],
-    [PartCategory],
-    [PartName]
-FROM dbo.Parts
-ORDER BY PartId DESC
+    [LocationId],
+    ISNULL([PartQuantity], 0) AS PartQuantity
+FROM dbo.Inventory
+ORDER BY InventoryId DESC
 GO
 
 SELECT
@@ -16,10 +18,16 @@ ORDER BY LocationId DESC
 GO
 
 SELECT
-    [InventoryId],
+    [PartCategoryId],
+    [PartCategoryName]
+FROM dbo.PartCategories
+ORDER BY PartCategoryId DESC
+GO
+
+SELECT
     [PartId],
-    [LocationId],
-    ISNULL([PartQuantity], 0) AS PartQuantity
-FROM dbo.Inventory
-ORDER BY InventoryId DESC
+    [PartCategoryId],
+    [PartName]
+FROM dbo.Parts
+ORDER BY PartId DESC
 GO

@@ -4,9 +4,9 @@
 USE PartsInventory;
 GO
 
-IF OBJECT_ID('dbo.Parts', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.Inventory', 'U') IS NOT NULL
 BEGIN
-    DROP TABLE dbo.Parts;
+    DROP TABLE dbo.Inventory;
 END;
 GO
 
@@ -16,17 +16,31 @@ BEGIN
 END;
 GO
 
-IF OBJECT_ID('dbo.Inventory', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.Parts', 'U') IS NOT NULL
 BEGIN
-    DROP TABLE dbo.Inventory;
+    DROP TABLE dbo.Parts;
 END;
+GO
+
+IF OBJECT_ID('dbo.PartCategories', 'U') IS NOT NULL
+BEGIN
+    DROP TABLE dbo.PartCategories;
+END;
+GO
+
+CREATE TABLE PartCategories
+(
+    PartCategoryId INT IDENTITY(1,1) PRIMARY KEY,
+    PartCategoryName NVARCHAR(50)
+)
 GO
 
 CREATE TABLE Parts
 (
     PartId INT IDENTITY(1,1) PRIMARY KEY,
-    PartCategory NVARCHAR(50),
-    PartName NVARCHAR(MAX)
+    PartCategoryId INT,
+    PartName NVARCHAR(MAX),
+    CONSTRAINT FK_Parts_PartCategories FOREIGN KEY (PartId) REFERENCES PartCategories(PartCategoryId),
 )
 GO
 
