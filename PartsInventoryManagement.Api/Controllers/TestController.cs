@@ -20,7 +20,7 @@ namespace PartsInventoryManagement.Api.Controllers
 		[HttpGet("/DbConnection")]
 		public IActionResult TestConnection()
 		{
-			return Ok(_dapper.LoadDataSingle<DateTime>("SELECT GETDATE()"));
+			return Ok(_dapper.QuerySql<DateTime>("SELECT GETDATE()"));
 		}
 	}
 }
