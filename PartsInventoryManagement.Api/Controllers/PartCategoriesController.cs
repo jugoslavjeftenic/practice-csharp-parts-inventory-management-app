@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Dapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using PartsInventoryManagement.Api.Data;
 using PartsInventoryManagement.Api.Dtos;
 using PartsInventoryManagement.Api.Models;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 
 namespace PartsInventoryManagement.Api.Controllers
@@ -18,15 +20,19 @@ namespace PartsInventoryManagement.Api.Controllers
 		[HttpPost]
 		public IActionResult AddPartCategory(NewPartCategoryDTO partCategoryDto)
 		{
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@PartCategoryNameParam", partCategoryDto.PartCategoryName, DbType.String);
+
 			string sqlQueryDb = @$"
 				SELECT *
 				FROM [dbo].[PartCategories]
-				WHERE LOWER([PartCategoryName]) = LOWER('{partCategoryDto.PartCategoryName}')
+				WHERE [PartCategoryName] = @PartCategoryNameParam
 				";
 
-			IEnumerable<PartCategoryModel> partCategories = _dapper.LoadData<PartCategoryModel>(sqlQueryDb);
+			IEnumerable<PartCategoryModel> partCategoriesQueryDb =
+				_dapper.QuerySql<PartCategoryModel>(sqlQueryDb, sqlParameters);
 
-			if (partCategories.Any())
+			if (partCategoriesQueryDb.Any())
 			{
 				return Conflict("Kategorija već postoji.");
 			}
@@ -35,10 +41,10 @@ namespace PartsInventoryManagement.Api.Controllers
 				INSERT INTO [dbo].[PartCategories] (
 					[PartCategoryName]
 				) VALUES (
-					'{partCategoryDto.PartCategoryName}'
+					@PartCategoryNameParam
 				)";
 
-			if (_dapper.ExecuteSql(sql) == false)
+			if (_dapper.ExecuteSql(sql, sqlParameters) == false)
 			{
 				return BadRequest("Greška prilikom dodavanja kategorije.");
 			}
@@ -52,7 +58,7 @@ namespace PartsInventoryManagement.Api.Controllers
 		{
 			string sql = "SELECT [PartCategoryId], [PartCategoryName] FROM [dbo].[PartCategories]";
 
-			IEnumerable<PartCategoryModel> partCategories = _dapper.LoadData<PartCategoryModel>(sql);
+			IEnumerable<PartCategoryModel> partCategories = _dapper.QuerySql<PartCategoryModel>(sql);
 
 			if (partCategories == null || !partCategories.Any())
 			{
@@ -66,13 +72,20 @@ namespace PartsInventoryManagement.Api.Controllers
 		[HttpPut]
 		public IActionResult EditPartCategory(PartCategoryModel partCategory)
 		{
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@PartCategoryIdParam", partCategory.PartCategoryId, DbType.Int32);
+			sqlParameters.Add("@PartCategoryNameParam", partCategory.PartCategoryName, DbType.String);
+
 			string sqlQueryDb = @$"
 				SELECT *
 				FROM [dbo].[PartCategories]
-				WHERE [PartCategoryId] = {partCategory.PartCategoryId}
+				WHERE [PartCategoryId] = @PartCategoryIdParam
 				";
 
-			if (_dapper.LoadData<PartCategoryModel>(sqlQueryDb).Any() == false)
+			IEnumerable<PartCategoryModel> partCategoriesQueryDb =
+				_dapper.QuerySql<PartCategoryModel>(sqlQueryDb, sqlParameters);
+
+			if (partCategoriesQueryDb.Any() == false)
 			{
 				return Conflict("Nema tražene kategorije.");
 			}
@@ -80,11 +93,11 @@ namespace PartsInventoryManagement.Api.Controllers
 			string sql = @$"
 				UPDATE [dbo].[PartCategories]
 				SET
-					[PartCategoryName] = '{partCategory.PartCategoryName}'
-				WHERE [PartCategoryId] = {partCategory.PartCategoryId}
+					[PartCategoryName] = @PartCategoryNameParam
+				WHERE [PartCategoryId] = @PartCategoryIdParam
 				";
 
-			if (_dapper.ExecuteSql(sql) == false)
+			if (_dapper.ExecuteSql(sql, sqlParameters) == false)
 			{
 				return BadRequest("Greška prilikom izmene kategorije.");
 			}
@@ -96,15 +109,19 @@ namespace PartsInventoryManagement.Api.Controllers
 		[HttpDelete("/{partCategoryId}")]
 		public IActionResult DeletePartCategory(int partCategoryId)
 		{
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@PartCategoryIdParam", partCategoryId, DbType.Int32);
+
 			string sqlQueryDb = @$"
 				SELECT *
 				FROM [dbo].[PartCategories]
-				WHERE [PartCategoryId] = {partCategoryId}
+				WHERE [PartCategoryId] = @PartCategoryIdParam
 				";
 
-			IEnumerable<PartCategoryModel> partCategories = _dapper.LoadData<PartCategoryModel>(sqlQueryDb);
+			IEnumerable<PartCategoryModel> partCategoriesQueryDb =
+				_dapper.QuerySql<PartCategoryModel>(sqlQueryDb, sqlParameters);
 
-			if (partCategories.Any() == false)
+			if (partCategoriesQueryDb.Any() == false)
 			{
 				return Conflict("Nema tražene kategorije.");
 			}
@@ -112,15 +129,15 @@ namespace PartsInventoryManagement.Api.Controllers
 			string sql = @$"
 				DELETE
 				FROM [dbo].[PartCategories]
-				WHERE [PartCategoryId] = {partCategoryId}
+				WHERE [PartCategoryId] = @PartCategoryIdParam
 				";
 
-			if (_dapper.ExecuteSql(sql) == false)
+			if (_dapper.ExecuteSql(sql, sqlParameters) == false)
 			{
 				return BadRequest("Greška prilikom brisanja kategorije.");
 			}
 
-			return Ok(partCategories);
+			return Ok(partCategoriesQueryDb);
 		}
 	}
 }
