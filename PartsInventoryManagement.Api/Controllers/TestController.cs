@@ -12,15 +12,15 @@ namespace PartsInventoryManagement.Api.Controllers
 		private readonly DbContextDapper _dapper = new(config);
 
 		[HttpGet]
-		public string TestApplication()
+		public IActionResult TestApplication()
 		{
-			return "Application is up && running.";
+			return Ok("Application is up && running.");
 		}
 
-		[HttpGet("TestDbConnection")]
-		public DateTime TestConnection()
+		[HttpGet("/DbConnection")]
+		public IActionResult TestConnection()
 		{
-			return _dapper.LoadDataSingle<DateTime>("SELECT GETDATE()");
+			return Ok(_dapper.LoadDataSingle<DateTime>("SELECT GETDATE()"));
 		}
 	}
 }
