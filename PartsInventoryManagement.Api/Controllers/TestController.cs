@@ -11,7 +11,7 @@ namespace PartsInventoryManagement.Api.Controllers
 	{
 		private readonly DbContextDapper _dapper = new(config);
 
-		[HttpGet]
+		[HttpGet("AppIsRunning")]
 		public IActionResult TestApplication()
 		{
 			return Ok("Application is up && running.");
