@@ -96,7 +96,7 @@ namespace PartsInventoryManagement.Api.Controllers
 				WHERE [PartCategoryId] = @PartCategoryIdParam
 				";
 
-			if (_dapper.ExecuteSql(sql, sqlParameters) == false)
+			if (_dapper.ExecuteSql(sql, sqlParameters) is not true)
 			{
 				return BadRequest("Greška prilikom izmene kategorije.");
 			}
@@ -138,7 +138,7 @@ namespace PartsInventoryManagement.Api.Controllers
 				WHERE [PartCategoryId] = @PartCategoryIdParam
 				";
 
-			if (_dapper.ExecuteSql(sql, sqlParameters) == false)
+			if (_dapper.ExecuteSql(sql, sqlParameters) is not true)
 			{
 				return BadRequest("Greška prilikom brisanja kategorije.");
 			}
