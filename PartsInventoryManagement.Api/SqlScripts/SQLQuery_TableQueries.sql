@@ -1,4 +1,7 @@
 
+USE PartsInventory;
+GO
+
 SELECT
     [InventoryId],
     [PartId],
