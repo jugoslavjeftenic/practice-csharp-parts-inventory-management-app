@@ -23,7 +23,7 @@ namespace PartsInventoryManagement.Api.Controllers
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@PartCategoryNameParam", partCategoryDto.PartCategoryName, DbType.String);
 
-			// Query Db for duplicate part category
+			// Query Db for part category
 			string sqlPartCategoriesQueryDb = @$"
 				SELECT *
 				FROM [dbo].[PartCategories]
@@ -38,7 +38,7 @@ namespace PartsInventoryManagement.Api.Controllers
 				return BadRequest("Kategorija već postoji.");
 			}
 
-			// Insert new part category
+			// Insert part category
 			string sql = @$"
 				INSERT INTO [dbo].[PartCategories] (
 					[PartCategoryName]
@@ -73,7 +73,7 @@ namespace PartsInventoryManagement.Api.Controllers
 			sqlParameters.Add("@PartCategoryIdParam", partCategory.PartCategoryId, DbType.Int32);
 			sqlParameters.Add("@PartCategoryNameParam", partCategory.PartCategoryName, DbType.String);
 
-			// Query Db if part category exists
+			// Query Db for part category
 			string sqlPartCategoriesQueryDb = @$"
 				SELECT *
 				FROM [dbo].[PartCategories]
@@ -88,7 +88,7 @@ namespace PartsInventoryManagement.Api.Controllers
 				return BadRequest("Nema tražene kategorije.");
 			}
 
-			// Update existsing part category
+			// Update part category
 			string sql = @$"
 				UPDATE [dbo].[PartCategories]
 				SET
@@ -116,7 +116,7 @@ namespace PartsInventoryManagement.Api.Controllers
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@PartCategoryIdParam", partCategoryId, DbType.Int32);
 
-			// Query Db if part category exists
+			// Query Db for part category
 			string sqlPartCategoriesQueryDb = @$"
 				SELECT *
 				FROM [dbo].[PartCategories]
@@ -179,7 +179,7 @@ namespace PartsInventoryManagement.Api.Controllers
 			sqlParameters.Add("@PartCategoryNameParam", partCategoryName, DbType.String);
 
 			// Query Db by part category partial name
-			// If route parameter is int, overload with GetPartCategoryById
+			// If route parameter is int, method will be overload with GetPartCategoryById
 			string sql = @$"
 				SELECT [PartCategoryId], [PartCategoryName]
 				FROM [dbo].[PartCategories]
