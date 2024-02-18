@@ -23,20 +23,22 @@ namespace PartsInventoryManagement.Api.Controllers
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@PartCategoryNameParam", partCategoryDto.PartCategoryName, DbType.String);
 
-			string sqlQueryDb = @$"
+			// Query Db for duplicate part category
+			string sqlPartCategoriesQueryDb = @$"
 				SELECT *
 				FROM [dbo].[PartCategories]
 				WHERE [PartCategoryName] = @PartCategoryNameParam
 				";
 
 			IEnumerable<PartCategoryModel> partCategoriesQueryDb =
-				_dapper.QuerySql<PartCategoryModel>(sqlQueryDb, sqlParameters);
+				_dapper.QuerySql<PartCategoryModel>(sqlPartCategoriesQueryDb, sqlParameters);
 
 			if (partCategoriesQueryDb.Any())
 			{
 				return BadRequest("Kategorija već postoji.");
 			}
 
+			// Insert new part category
 			string sql = @$"
 				INSERT INTO [dbo].[PartCategories] (
 					[PartCategoryName]
@@ -44,7 +46,7 @@ namespace PartsInventoryManagement.Api.Controllers
 					@PartCategoryNameParam
 				)";
 
-			if (_dapper.ExecuteSql(sql, sqlParameters) == false)
+			if (_dapper.ExecuteSql(sql, sqlParameters) is not true)
 			{
 				return BadRequest("Greška prilikom dodavanja kategorije.");
 			}
@@ -71,20 +73,22 @@ namespace PartsInventoryManagement.Api.Controllers
 			sqlParameters.Add("@PartCategoryIdParam", partCategory.PartCategoryId, DbType.Int32);
 			sqlParameters.Add("@PartCategoryNameParam", partCategory.PartCategoryName, DbType.String);
 
-			string sqlQueryDb = @$"
+			// Query Db if part category exists
+			string sqlPartCategoriesQueryDb = @$"
 				SELECT *
 				FROM [dbo].[PartCategories]
 				WHERE [PartCategoryId] = @PartCategoryIdParam
 				";
 
 			IEnumerable<PartCategoryModel> partCategoriesQueryDb =
-				_dapper.QuerySql<PartCategoryModel>(sqlQueryDb, sqlParameters);
+				_dapper.QuerySql<PartCategoryModel>(sqlPartCategoriesQueryDb, sqlParameters);
 
 			if (partCategoriesQueryDb.Any() is not true)
 			{
 				return BadRequest("Nema tražene kategorije.");
 			}
 
+			// Update existsing part category
 			string sql = @$"
 				UPDATE [dbo].[PartCategories]
 				SET
@@ -112,20 +116,22 @@ namespace PartsInventoryManagement.Api.Controllers
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@PartCategoryIdParam", partCategoryId, DbType.Int32);
 
-			string sqlQueryDb = @$"
+			// Query Db if part category exists
+			string sqlPartCategoriesQueryDb = @$"
 				SELECT *
 				FROM [dbo].[PartCategories]
 				WHERE [PartCategoryId] = @PartCategoryIdParam
 				";
 
 			IEnumerable<PartCategoryModel> partCategoriesQueryDb =
-				_dapper.QuerySql<PartCategoryModel>(sqlQueryDb, sqlParameters);
+				_dapper.QuerySql<PartCategoryModel>(sqlPartCategoriesQueryDb, sqlParameters);
 
 			if (partCategoriesQueryDb.Any() is not true)
 			{
 				return Conflict("Nema tražene kategorije.");
 			}
 
+			// Delete part category
 			string sql = @$"
 				DELETE
 				FROM [dbo].[PartCategories]
@@ -152,6 +158,7 @@ namespace PartsInventoryManagement.Api.Controllers
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@PartCategoryIdParam", partCategoryId, DbType.Int32);
 
+			// Query Db by part category id
 			string sql = @$"
 				SELECT [PartCategoryId], [PartCategoryName]
 				FROM [dbo].[PartCategories]
@@ -171,6 +178,8 @@ namespace PartsInventoryManagement.Api.Controllers
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@PartCategoryNameParam", partCategoryName, DbType.String);
 
+			// Query Db by part category partial name
+			// If route parameter is int, overload with GetPartCategoryById
 			string sql = @$"
 				SELECT [PartCategoryId], [PartCategoryName]
 				FROM [dbo].[PartCategories]
