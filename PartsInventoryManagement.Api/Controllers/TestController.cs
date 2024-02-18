@@ -17,8 +17,8 @@ namespace PartsInventoryManagement.Api.Controllers
 			return Ok("Application is up && running.");
 		}
 
-		[HttpGet("/DbConnection")]
-		public IActionResult TestConnection()
+		[HttpGet("DbConnection")]
+		public IActionResult TestDbConnection()
 		{
 			return Ok(_dapper.QuerySql<DateTime>("SELECT GETDATE()"));
 		}
