@@ -178,11 +178,11 @@ namespace PartsInventoryManagement.Api.Controllers
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@PartCategoryNameParam", partCategoryName, DbType.String);
 
-			// Query Db by part category partial name
+			// Query Db by part category's partial name
 			string sql = @$"
 				SELECT [PartCategoryId], [PartCategoryName]
 				FROM [dbo].[PartCategories]
-				WHERE [PartCategoryName] LIKE  '%' + @PartCategoryNameParam + '%'
+				WHERE [PartCategoryName] LIKE '%' + @PartCategoryNameParam + '%'
 				";
 
 			IEnumerable<PartCategoryModel> partCategories =
