@@ -180,5 +180,88 @@ namespace PartsInventoryManagement.Api.Controllers
 
 			return Ok(partsQueryDb);
 		}
+
+		// Read ById
+		[HttpGet("{partId:int}")]
+		public IActionResult GetPartsById(int partId)
+		{
+			if (partId < 1)
+			{
+				return BadRequest($"Id dela mora da bude veći od 0.");
+			}
+
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@PartIdParam", partId, DbType.Int32);
+
+			// Query Db by part id
+			string sql = @$"
+				SELECT [PartId], [PartCategoryId], [PartName]
+				FROM [dbo].[Parts]
+				WHERE [PartId] = @PartIdParam
+				";
+
+			IEnumerable<PartModel> parts = _dapper.QuerySql<PartModel>(sql, sqlParameters);
+
+			return Ok(parts);
+		}
+
+		// Read ByPartCategoryId
+		[HttpGet("category/{partCategoryId:int}")]
+		public IActionResult GetPartsByPartCategoryId(int partCategoryId)
+		{
+			if (partCategoryId < 1)
+			{
+				return BadRequest($"Id kategorije mora da bude veći od 0.");
+			}
+
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@PartCategoryIdParam", partCategoryId, DbType.Int32);
+
+			// Query Db for part category
+			string sqlPartCategoriesQueryDb = @$"
+				SELECT *
+				FROM [dbo].[PartCategories]
+				WHERE [PartCategoryId] = @PartCategoryIdParam
+				";
+
+			IEnumerable<PartCategoryModel> partCategoriesQueryDb =
+				_dapper.QuerySql<PartCategoryModel>(sqlPartCategoriesQueryDb, sqlParameters);
+
+			if (partCategoriesQueryDb.Any() is not true)
+			{
+				return Conflict("Nema tražene kategorije.");
+			}
+
+			// Query Db by part id
+			string sql = @$"
+				SELECT [PartId], [PartCategoryId], [PartName]
+				FROM [dbo].[Parts]
+				WHERE [PartCategoryId] = @PartCategoryIdParam
+				";
+
+			IEnumerable<PartModel> parts = _dapper.QuerySql<PartModel>(sql, sqlParameters);
+
+			return Ok(parts);
+		}
+
+		// Read LikeName
+		[HttpGet("name/{partName}")]
+		public IActionResult GetPartLikeName(string partName)
+		{
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@PartNameParam", partName, DbType.String);
+
+			// Query Db by part partial name
+			string sql = @$"
+				SELECT [PartId], [PartCategoryId], [PartName]
+				FROM [dbo].[Parts]
+				WHERE [PartName] LIKE  '%' + @PartNameParam + '%'
+				";
+
+			IEnumerable<PartModel> partCategories =
+				_dapper.QuerySql<PartModel>(sql, sqlParameters);
+
+			return Ok(partCategories);
+		}
 	}
 }
