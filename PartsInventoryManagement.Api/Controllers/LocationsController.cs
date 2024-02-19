@@ -161,5 +161,106 @@ namespace PartsInventoryManagement.Api.Controllers
 
 			return Ok(locationsQueryDb);
 		}
+
+		// Read ById
+		[HttpGet("{locationId:int}")]
+		public IActionResult GetLocationById(int locationId)
+		{
+			if (locationId < 1)
+			{
+				return BadRequest($"Id lokacije mora da bude veći od 0.");
+			}
+
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@LocationIdParam", locationId, DbType.Int32);
+
+			// Query Db by part category id
+			string sql = @$"
+				SELECT
+					[LocationId],
+					[LocationAlpha],
+					[LocationName],
+					[LocationColor]
+				FROM [dbo].[Locations]
+				WHERE [LocationId] = @LocationIdParam
+				";
+
+			IEnumerable<LocationModel> locations =
+				_dapper.QuerySql<LocationModel>(sql, sqlParameters);
+
+			return Ok(locations);
+		}
+
+		// Read LikeAlpha
+		[HttpGet("alpha/{locationAlpha}")]
+		public IActionResult GetLocationsLikeAlpha(string locationAlpha)
+		{
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@LocationAlphaParam", locationAlpha, DbType.String);
+
+			// Query Db by location's partial alpha
+			string sql = @$"
+				SELECT
+					[LocationId],
+					[LocationAlpha],
+					[LocationName],
+					[LocationColor]
+				FROM [dbo].[Locations]
+				WHERE [LocationAlpha] LIKE '%' + @LocationAlphaParam + '%'
+				";
+
+			IEnumerable<LocationModel> locations =
+				_dapper.QuerySql<LocationModel>(sql, sqlParameters);
+
+			return Ok(locations);
+		}
+
+		// Read LikeName
+		[HttpGet("name/{locationName}")]
+		public IActionResult GetLocationsLikeName(string locationName)
+		{
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@LocationNameParam", locationName, DbType.String);
+
+			// Query Db by location's partial name
+			string sql = @$"
+				SELECT
+					[LocationId],
+					[LocationAlpha],
+					[LocationName],
+					[LocationColor]
+				FROM [dbo].[Locations]
+				WHERE [LocationName] LIKE '%' + @LocationNameParam + '%'
+				";
+
+			IEnumerable<LocationModel> locations =
+				_dapper.QuerySql<LocationModel>(sql, sqlParameters);
+
+			return Ok(locations);
+		}
+
+		// Read ByColor
+		[HttpGet("color/{locationColor}")]
+		public IActionResult GetLocationsByColor(string locationColor)
+		{
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@LocationColorParam", locationColor, DbType.String);
+
+			// Query Db by location's color
+			string sql = @$"
+				SELECT
+					[LocationId],
+					[LocationAlpha],
+					[LocationName],
+					[LocationColor]
+				FROM [dbo].[Locations]
+				WHERE [LocationColor] = @LocationColorParam
+				";
+
+			IEnumerable<LocationModel> locations =
+				_dapper.QuerySql<LocationModel>(sql, sqlParameters);
+
+			return Ok(locations);
+		}
 	}
 }
