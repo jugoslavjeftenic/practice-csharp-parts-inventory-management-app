@@ -1,11 +1,22 @@
--- CREATE DATABASE PartsInventory
--- GO
+--CREATE DATABASE PartsInventory
+--DROP DATABASE PartsInventory
+GO
 
 USE PartsInventory;
 GO
 
 IF OBJECT_ID('dbo.Inventory', 'U') IS NOT NULL
 BEGIN
+    IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Inventory_Parts')
+    BEGIN
+        ALTER TABLE dbo.Inventory DROP CONSTRAINT FK_Inventory_Parts;
+    END;
+
+    IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Inventory_Locations')
+    BEGIN
+        ALTER TABLE dbo.Inventory DROP CONSTRAINT FK_Inventory_Locations;
+    END;
+
     DROP TABLE dbo.Inventory;
 END;
 GO
@@ -18,6 +29,11 @@ GO
 
 IF OBJECT_ID('dbo.Parts', 'U') IS NOT NULL
 BEGIN
+    IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Parts_PartCategories')
+    BEGIN
+        ALTER TABLE dbo.Parts DROP CONSTRAINT FK_Parts_PartCategories;
+    END;
+
     DROP TABLE dbo.Parts;
 END;
 GO
@@ -40,7 +56,7 @@ CREATE TABLE Parts
     PartId INT IDENTITY(1,1) PRIMARY KEY,
     PartCategoryId INT,
     PartName NVARCHAR(MAX),
-    CONSTRAINT FK_Parts_PartCategories FOREIGN KEY (PartId) REFERENCES PartCategories(PartCategoryId),
+    CONSTRAINT FK_Parts_PartCategories FOREIGN KEY (PartCategoryId) REFERENCES PartCategories(PartCategoryId),
 )
 GO
 
