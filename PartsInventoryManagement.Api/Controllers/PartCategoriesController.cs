@@ -172,14 +172,13 @@ namespace PartsInventoryManagement.Api.Controllers
 		}
 
 		// Read LikeName
-		[HttpGet("{partCategoryName}")]
+		[HttpGet("name/{partCategoryName}")]
 		public IActionResult GetPartCategoriesLikeName(string partCategoryName)
 		{
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@PartCategoryNameParam", partCategoryName, DbType.String);
 
 			// Query Db by part category partial name
-			// If route parameter is int, method will be overload with GetPartCategoryById
 			string sql = @$"
 				SELECT [PartCategoryId], [PartCategoryName]
 				FROM [dbo].[PartCategories]
