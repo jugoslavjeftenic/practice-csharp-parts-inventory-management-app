@@ -12,13 +12,15 @@ namespace PartsInventoryManagement.Api.Data
 
 		public IEnumerable<T> QuerySql<T>(string sql, DynamicParameters? parameters = null)
 		{
-			IDbConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
+			using IDbConnection dbConnection =
+				new SqlConnection(_config.GetConnectionString("DefaultConnection"));
 			return dbConnection.Query<T>(sql, parameters);
 		}
 
 		public bool ExecuteSql(string sql, DynamicParameters? parameters = null)
 		{
-			IDbConnection dbConnection = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
+			using IDbConnection dbConnection =
+				new SqlConnection(_config.GetConnectionString("DefaultConnection"));
 			return dbConnection.Execute(sql, parameters) > 0;
 		}
 	}
