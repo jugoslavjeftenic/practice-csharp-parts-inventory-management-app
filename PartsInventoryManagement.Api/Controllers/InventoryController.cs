@@ -222,5 +222,89 @@ namespace PartsInventoryManagement.Api.Controllers
 
 			return Ok(inventoryItemQueryDb);
 		}
+
+		// Read ById
+		[HttpGet("{inventoryId:int}")]
+		public IActionResult GetInventoryItemById(int inventoryId)
+		{
+			if (inventoryId < 1)
+			{
+				return BadRequest($"Id inventarne stavke mora da bude veći od 0.");
+			}
+
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@InventoryIdParam", inventoryId, DbType.Int32);
+
+			// Query Db by part id
+			string sql = @$"
+				SELECT
+					[InventoryId],
+					[PartId],
+					[LocationId],
+					[PartQuantity]
+				FROM [dbo].[Inventory]
+				WHERE [InventoryId] = @InventoryIdParam
+				";
+
+			IEnumerable<InventoryModel> inventoryItems = _dapper.QuerySql<InventoryModel>(sql, sqlParameters);
+
+			return Ok(inventoryItems);
+		}
+
+		// Read ByPartId
+		[HttpGet("part/{partId:int}")]
+		public IActionResult GetInventoryItemByPartId(int partId)
+		{
+			if (partId < 1)
+			{
+				return BadRequest($"Id dela mora da bude veći od 0.");
+			}
+
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@PartIdParam", partId, DbType.Int32);
+
+			// Query Db by part id
+			string sql = @$"
+				SELECT
+					[InventoryId],
+					[PartId],
+					[LocationId],
+					[PartQuantity]
+				FROM [dbo].[Inventory]
+				WHERE [PartId] = @PartIdParam
+				";
+
+			IEnumerable<InventoryModel> inventoryItems = _dapper.QuerySql<InventoryModel>(sql, sqlParameters);
+
+			return Ok(inventoryItems);
+		}
+
+		// Read ByLocationId
+		[HttpGet("location/{locationId:int}")]
+		public IActionResult GetInventoryItemByLocationId(int locationId)
+		{
+			if (locationId < 1)
+			{
+				return BadRequest($"Id lokacije mora da bude veći od 0.");
+			}
+
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@LocationIdParam", locationId, DbType.Int32);
+
+			// Query Db by location id
+			string sql = @$"
+				SELECT
+					[InventoryId],
+					[PartId],
+					[LocationId],
+					[PartQuantity]
+				FROM [dbo].[Inventory]
+				WHERE [LocationId] = @LocationIdParam
+				";
+
+			IEnumerable<InventoryModel> inventoryItems = _dapper.QuerySql<InventoryModel>(sql, sqlParameters);
+
+			return Ok(inventoryItems);
+		}
 	}
 }
