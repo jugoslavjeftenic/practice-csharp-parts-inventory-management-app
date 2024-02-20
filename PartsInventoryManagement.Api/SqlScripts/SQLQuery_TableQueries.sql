@@ -34,3 +34,13 @@ SELECT
 FROM dbo.Parts
 ORDER BY PartId DESC
 GO
+
+SELECT
+    [UserId],
+    [UserName],
+    [LocationId],
+    [PasswordHash],
+    [PasswordSalt]
+FROM dbo.Users
+ORDER BY UserId DESC
+GO
