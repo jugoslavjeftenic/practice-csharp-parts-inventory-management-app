@@ -1,8 +1,7 @@
-﻿namespace PartsInventoryManagement.Api.Models
+﻿namespace PartsInventoryManagement.Api.Dtos
 {
-	public class InventoryModel
+	public class NewInventoryItemDTO
 	{
-		public int InventoryId { get; set; }
 		public int PartId { get; set; }
 		public int LocationId { get; set; }
 		public int PartQuantity { get; set; }
