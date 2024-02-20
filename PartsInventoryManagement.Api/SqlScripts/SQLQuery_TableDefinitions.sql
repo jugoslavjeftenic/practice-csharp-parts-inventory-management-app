@@ -5,6 +5,17 @@ GO
 USE PartsInventory;
 GO
 
+IF OBJECT_ID('dbo.Users', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Users_Locations')
+    BEGIN
+        ALTER TABLE dbo.Inventory DROP CONSTRAINT FK_Users_Locations;
+    END;
+
+    DROP TABLE dbo.Users;
+END;
+GO
+
 IF OBJECT_ID('dbo.Inventory', 'U') IS NOT NULL
 BEGIN
     IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Inventory_Parts')
@@ -56,7 +67,7 @@ CREATE TABLE Parts
     PartId INT IDENTITY(1,1) PRIMARY KEY,
     PartCategoryId INT,
     PartName NVARCHAR(MAX),
-    CONSTRAINT FK_Parts_PartCategories FOREIGN KEY (PartCategoryId) REFERENCES PartCategories(PartCategoryId),
+    CONSTRAINT FK_Parts_PartCategories FOREIGN KEY (PartCategoryId) REFERENCES PartCategories(PartCategoryId)
 )
 GO
 
@@ -77,5 +88,16 @@ CREATE TABLE Inventory
     PartQuantity INT,
     CONSTRAINT FK_Inventory_Parts FOREIGN KEY (PartId) REFERENCES Parts(PartId),
     CONSTRAINT FK_Inventory_Locations FOREIGN KEY (LocationId) REFERENCES Locations(LocationId)
+)
+GO
+
+CREATE TABLE Users
+(
+    UserId INT IDENTITY(1,1) PRIMARY KEY,
+    UserName NVARCHAR(20),
+    LocationId INT,
+	PasswordHash VARBINARY(MAX) NULL,
+	PasswordSalt VARBINARY(MAX) NULL
+    CONSTRAINT FK_Users_Locations FOREIGN KEY (LocationId) REFERENCES Locations(LocationId)
 )
 GO
