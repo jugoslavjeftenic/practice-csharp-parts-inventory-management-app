@@ -5,12 +5,28 @@ using System;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Microsoft.Extensions.Configuration.UserSecrets;
+using System.Security.Cryptography;
 
 namespace PartsInventoryManagement.Api.Helpers
 {
 	public class AuthHelper(IConfiguration config)
 	{
 		private readonly IConfiguration _config = config;
+
+		public (byte[] passwordHash, byte[] passwordSalt) HashPassword(string password)
+		{
+			byte[] passwordSalt = [128 / 8];
+
+			using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+			{
+				rng.GetNonZeroBytes(passwordSalt);
+			}
+
+			byte[] passwordHash = GetPasswordHash(password, passwordSalt);
+
+			return (passwordHash, passwordSalt);
+		}
 
 		public byte[] GetPasswordHash(string password, byte[] passwordSalt)
 		{
