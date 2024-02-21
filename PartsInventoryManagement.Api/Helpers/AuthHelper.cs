@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.Extensions.Configuration;
-using System.Text;
-using System;
 using Microsoft.IdentityModel.Tokens;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Microsoft.Extensions.Configuration.UserSecrets;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace PartsInventoryManagement.Api.Helpers
 {
