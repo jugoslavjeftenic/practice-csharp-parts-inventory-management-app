@@ -3,10 +3,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using PartsInventoryManagement.Api.Data;
 using PartsInventoryManagement.Api.Dtos;
+using PartsInventoryManagement.Api.Helpers;
 using PartsInventoryManagement.Api.Models;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace PartsInventoryManagement.Api.Controllers
 {
@@ -15,12 +17,13 @@ namespace PartsInventoryManagement.Api.Controllers
 	public class UsersController(IConfiguration config) : ControllerBase
 	{
 		private readonly DbContextDapper _dapper = new(config);
+		private readonly AuthHelper _authHelper = new(config);
 
 		// Create
 		[HttpPost]
 		public IActionResult AddPart(NewUserDTO userDto)
 		{
-			if (userDto.Password.Equals(userDto.PasswordConfirm))
+			if (userDto.Password.Equals(userDto.PasswordConfirm) is not true)
 			{
 				return BadRequest("Lozinke se ne podudaraju.");
 			}
@@ -46,35 +49,54 @@ namespace PartsInventoryManagement.Api.Controllers
 				return BadRequest("Korisnik već postoji.");
 			}
 
-			// TODO: Nastaviti ovde
-			// Query Db for part
-			string sqlPartsQueryDb = @$"
+			// Query Db for location
+			if (userDto.LocationId.Equals(0) is not true)
+			{
+				string sqlLocationsQueryDb = @$"
 				SELECT *
-				FROM [dbo].[Parts]
-				WHERE [PartName] = @PartNameParam
+				FROM [dbo].[Locations]
+				WHERE [LocationId] = @LocationIdParam
 				";
 
-			IEnumerable<PartModel> partsQueryDb =
-				_dapper.QuerySql<PartModel>(sqlPartsQueryDb, sqlParameters);
+				IEnumerable<LocationModel> locationsQueryDb =
+					_dapper.QuerySql<LocationModel>(sqlLocationsQueryDb, sqlParameters);
 
-			if (partsQueryDb.Any())
-			{
-				return BadRequest("Deo već postoji.");
+				if (locationsQueryDb.Any() is not true)
+				{
+					return BadRequest("Nema tražene lokacije.");
+				}
 			}
 
-			// Insert part
+			// Hash password
+			byte[] passwordSalt = [128 / 8];
+
+			using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+			{
+				rng.GetNonZeroBytes(passwordSalt);
+			}
+
+			byte[] passwordHash = _authHelper.GetPasswordHash(userDto.Password, passwordSalt);
+
+			sqlParameters.Add("@PasswordHashParam", passwordHash, DbType.Binary);
+			sqlParameters.Add("@PasswordSaltParam", passwordSalt, DbType.Binary);
+
+			// Insert user
 			string sql = @$"
-				INSERT INTO [dbo].[Parts] (
-					[PartCategoryId],
-					[PartName]
+				INSERT INTO [dbo].[Users] (
+					[UserName],
+					[LocationId],
+					[PasswordHash],
+					[PasswordSalt]
 				) VALUES (
-					@PartCategoryIdParam,
-					@PartNameParam
+					@UserNameParam,
+					@LocationIdParam,
+					@PasswordHashParam,
+					@PasswordSaltParam
 				)";
 
 			if (_dapper.ExecuteSql(sql, sqlParameters) is not true)
 			{
-				return BadRequest("Greška prilikom dodavanja dela.");
+				return BadRequest("Greška prilikom dodavanja korisnika.");
 			}
 
 			return Ok(userDto);
