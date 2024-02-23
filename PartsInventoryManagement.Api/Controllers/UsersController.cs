@@ -283,7 +283,7 @@ namespace PartsInventoryManagement.Api.Controllers
 
 			if (locationsQueryDb.Any() is not true)
 			{
-				return Conflict("Nema tražene lokacije.");
+				return BadRequest("Nema tražene lokacije.");
 			}
 
 			// Query Db for users
@@ -296,6 +296,52 @@ namespace PartsInventoryManagement.Api.Controllers
 			IEnumerable<GetUsersDTO> users = _dapper.QuerySql<GetUsersDTO>(sql, sqlParameters);
 
 			return Ok(users);
+		}
+
+		[HttpPost("login")]
+		public IActionResult Login(LoginDTO login)
+		{
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@UserNameParam", login.UserName, DbType.String);
+			sqlParameters.Add("@PasswordParam", login.Password, DbType.String);
+
+			// Query Db for user
+			string sqlHashAndSaltQueryDb = @$"
+				SELECT [UserId], [PasswordHash], [PasswordSalt]
+				FROM [dbo].[Users]
+				WHERE [UserName] = @UserNameParam
+				";
+
+			IEnumerable<LoginHashAndSaltDTO> users =
+				_dapper.QuerySql<LoginHashAndSaltDTO>(sqlHashAndSaltQueryDb, sqlParameters);
+
+			if (users.Any() is not true)
+			{
+				return BadRequest("Nema traženog korisnika.");
+			}
+
+			if (users.First().PasswordHash is null || users.First().PasswordSalt is null)
+			{
+				return StatusCode(500,
+					"Polja potrebna za dekripciju lozinke su prazna. Kontaktirajte administratora aplikacije.");
+			}
+
+			byte[] passwordHash =
+				_authHelper.GetPasswordHash(login.Password, users.First().PasswordSalt!);
+
+			for (int i = 0; i < passwordHash.Length; i++)
+			{
+				if (passwordHash[i].Equals(users.First().PasswordHash![i]) is not true)
+				{
+					return Unauthorized("Incorrect password!");
+				}
+			}
+
+			return Ok(new Dictionary<string, string>
+			{
+				//{ "token", _authHelper.CreateToken(users.First().UserId) }
+				{ "token", "Bearer " + _authHelper.CreateToken(users.First().UserId) }
+			});
 		}
 	}
 }
