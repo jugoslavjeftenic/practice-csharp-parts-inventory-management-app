@@ -214,5 +214,88 @@ namespace PartsInventoryManagement.Api.Controllers
 
 			return Ok(usersQueryDb);
 		}
+
+		// Read ById
+		[HttpGet("{userId:int}")]
+		public IActionResult GetUserById(int userId)
+		{
+			if (userId < 1)
+			{
+				return BadRequest($"Id korisnika mora da bude veći od 0.");
+			}
+
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@UserIdParam", userId, DbType.Int32);
+
+			// Query Db for user
+			string sql = @$"
+				SELECT [UserId], [UserName], [LocationId]
+				FROM [dbo].[Users]
+				WHERE [UserId] = @UserIdParam
+				";
+
+			IEnumerable<GetUsersDTO> user = _dapper.QuerySql<GetUsersDTO>(sql, sqlParameters);
+
+			return Ok(user);
+		}
+
+		// Read LikeName
+		[HttpGet("name/{userName}")]
+		public IActionResult GetUserLikeName(string userName)
+		{
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@UserNameParam", userName, DbType.String);
+
+			// Query Db for user
+			string sql = @$"
+				SELECT [UserId], [UserName], [LocationId]
+				FROM [dbo].[Users]
+				WHERE [UserName] LIKE  '%' + @UserNameParam + '%'
+				";
+
+			IEnumerable<GetUsersDTO> users =
+				_dapper.QuerySql<GetUsersDTO>(sql, sqlParameters);
+
+			return Ok(users);
+		}
+
+		// Read LocationId
+		[HttpGet("location/{locationId:int}")]
+		public IActionResult GetUsersByLocationId(int locationId)
+		{
+			if (locationId < 1)
+			{
+				return BadRequest($"Id lokacije mora da bude veći od 0.");
+			}
+
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@LocationIdParam", locationId, DbType.Int32);
+
+			// Query Db for location
+			string sqlLocationsQueryDb = @$"
+				SELECT *
+				FROM [dbo].[Locations]
+				WHERE [LocationId] = @LocationIdParam
+				";
+
+			IEnumerable<LocationModel> locationsQueryDb =
+				_dapper.QuerySql<LocationModel>(sqlLocationsQueryDb, sqlParameters);
+
+			if (locationsQueryDb.Any() is not true)
+			{
+				return Conflict("Nema tražene lokacije.");
+			}
+
+			// Query Db for users
+			string sql = @$"
+				SELECT [UserId], [UserName], [LocationId]
+				FROM [dbo].[Users]
+				WHERE [LocationId] = @LocationIdParam
+				";
+
+			IEnumerable<GetUsersDTO> users = _dapper.QuerySql<GetUsersDTO>(sql, sqlParameters);
+
+			return Ok(users);
+		}
 	}
 }
