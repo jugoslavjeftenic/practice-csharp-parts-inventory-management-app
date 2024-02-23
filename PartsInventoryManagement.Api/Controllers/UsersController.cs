@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using PartsInventoryManagement.Api.Data;
 using PartsInventoryManagement.Api.Dtos;
@@ -341,6 +342,28 @@ namespace PartsInventoryManagement.Api.Controllers
 			{
 				//{ "token", _authHelper.CreateToken(users.First().UserId) }
 				{ "token", "Bearer " + _authHelper.CreateToken(users.First().UserId) }
+			});
+		}
+
+		[HttpGet("RefreshToken")]
+		public IActionResult RefreshToken()
+		{
+			DynamicParameters sqlParameters = new();
+			sqlParameters.Add("@UserIdParam", User.FindFirst("userId")?.Value, DbType.Int32);
+
+			// Query Db for user
+			string sqlUserQueryDb = @$"
+				SELECT [UserId]
+				FROM [dbo].[Users]
+				WHERE [UserId] = '{User.FindFirst("userId")?.Value ?? "1"}'
+				";
+
+			int userId = _dapper.QuerySql<int>(sqlUserQueryDb).First();
+
+			return Ok(new Dictionary<string, string>
+			{
+				//{ "token", _authHelper.CreateToken(users.First().UserId) }
+				{ "token", "Bearer " + _authHelper.CreateToken(userId) }
 			});
 		}
 	}
