@@ -15,7 +15,7 @@ SELECT
     [LocationId],
     [LocationAlpha],
     [LocationName],
-    [LocationColor]
+    [LocationHexColor]
 FROM dbo.Locations
 ORDER BY LocationId DESC
 GO

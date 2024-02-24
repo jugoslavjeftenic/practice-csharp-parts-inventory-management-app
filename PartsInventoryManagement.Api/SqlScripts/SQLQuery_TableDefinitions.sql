@@ -65,8 +65,8 @@ GO
 CREATE TABLE Parts
 (
     PartId INT IDENTITY(1,1) PRIMARY KEY,
-    PartCategoryId INT,
     PartName NVARCHAR(MAX),
+    PartCategoryId INT,
     CONSTRAINT FK_Parts_PartCategories FOREIGN KEY (PartCategoryId) REFERENCES PartCategories(PartCategoryId)
 )
 GO
@@ -76,7 +76,7 @@ CREATE TABLE Locations
     LocationId INT IDENTITY(1,1) PRIMARY KEY,
     LocationAlpha VARCHAR(5),
     LocationName NVARCHAR(MAX),
-    LocationColor VARCHAR(6)
+    LocationHexColor VARCHAR(6)
 )
 GO
 
