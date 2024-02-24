@@ -152,7 +152,8 @@ namespace PartsInventoryManagement.Api.Controllers
 			{
 				if (ex.Number.Equals(547))
 				{
-					return BadRequest("Nije moguće izbrisati kategoriju jer postoje povezani elementi.");
+					return BadRequest
+						("Nije moguće izbrisati kategoriju. Postoje povezani elementi u tabeli delova.");
 				}
 			}
 
