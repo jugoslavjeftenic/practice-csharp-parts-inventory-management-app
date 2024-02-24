@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using PartsInventoryManagement.Api.Data;
 using PartsInventoryManagement.Api.Dtos;
@@ -11,7 +12,7 @@ using System.Linq;
 namespace PartsInventoryManagement.Api.Controllers
 {
 	[ApiController]
-	[Route("[controller]")]
+	[Route("api/v1/[controller]")]
 	public class PartsController(IConfiguration config) : ControllerBase
 	{
 		private readonly DbContextDapper _dapper = new(config);
@@ -24,38 +25,38 @@ namespace PartsInventoryManagement.Api.Controllers
 			sqlParameters.Add("@PartCategoryIdParam", partDto.PartCategoryId, DbType.Int32);
 			sqlParameters.Add("@PartNameParam", partDto.PartName, DbType.String);
 
-			// Query Db for part category
-			string sqlPartCategoriesQueryDb = @$"
-				SELECT *
-				FROM [dbo].[PartCategories]
-				WHERE [PartCategoryId] = @PartCategoryIdParam
-				";
-
-			IEnumerable<PartCategoryModel> partCategoriesQueryDb =
-				_dapper.QuerySql<PartCategoryModel>(sqlPartCategoriesQueryDb, sqlParameters);
-
-			if (partCategoriesQueryDb.Any() is not true)
-			{
-				return BadRequest("Nema tražene kategorije.");
-			}
-
-			// Query Db for part
-			string sqlPartsQueryDb = @$"
+			// Query parts
+			string sqlQueryParts = @$"
 				SELECT *
 				FROM [dbo].[Parts]
 				WHERE [PartName] = @PartNameParam
 				";
 
-			IEnumerable<PartModel> partsQueryDb =
-				_dapper.QuerySql<PartModel>(sqlPartsQueryDb, sqlParameters);
+			IEnumerable<PartModel> parts =
+				_dapper.QuerySql<PartModel>(sqlQueryParts, sqlParameters);
 
-			if (partsQueryDb.Any())
+			if (parts.Any())
 			{
 				return BadRequest("Deo već postoji.");
 			}
 
+			// Query part categories
+			string sqlQueryPartCategories = @$"
+				SELECT *
+				FROM [dbo].[PartCategories]
+				WHERE [PartCategoryId] = @PartCategoryIdParam
+				";
+
+			IEnumerable<PartCategoryModel> partCategories =
+				_dapper.QuerySql<PartCategoryModel>(sqlQueryPartCategories, sqlParameters);
+
+			if (partCategories.Any() is not true)
+			{
+				return BadRequest("Nema tražene kategorije.");
+			}
+
 			// Insert part
-			string sql = @$"
+			string sqlExecute = @$"
 				INSERT INTO [dbo].[Parts] (
 					[PartCategoryId],
 					[PartName]
@@ -64,7 +65,7 @@ namespace PartsInventoryManagement.Api.Controllers
 					@PartNameParam
 				)";
 
-			if (_dapper.ExecuteSql(sql, sqlParameters) is not true)
+			if (_dapper.ExecuteSql(sqlExecute, sqlParameters) is not true)
 			{
 				return BadRequest("Greška prilikom dodavanja dela.");
 			}
@@ -76,9 +77,9 @@ namespace PartsInventoryManagement.Api.Controllers
 		[HttpGet]
 		public IActionResult GetParts()
 		{
-			string sql = "SELECT [PartId], [PartCategoryId], [PartName] FROM [dbo].[Parts]";
+			string sqlQuery = "SELECT [PartId], [PartCategoryId], [PartName] FROM [dbo].[Parts]";
 
-			IEnumerable<PartModel> parts = _dapper.QuerySql<PartModel>(sql);
+			IEnumerable<PartModel> parts = _dapper.QuerySql<PartModel>(sqlQuery);
 
 			return Ok(parts);
 		}
@@ -93,37 +94,37 @@ namespace PartsInventoryManagement.Api.Controllers
 			sqlParameters.Add("@PartNameParam", part.PartName, DbType.String);
 
 			// Query Db for part
-			string sqlPartQueryDb = @$"
+			string sqlQueryParts = @$"
 				SELECT *
 				FROM [dbo].[Parts]
 				WHERE [PartId] = @PartIdParam
 				";
 
-			IEnumerable<PartModel> partsQueryDb =
-				_dapper.QuerySql<PartModel>(sqlPartQueryDb, sqlParameters);
+			IEnumerable<PartModel> parts =
+				_dapper.QuerySql<PartModel>(sqlQueryParts, sqlParameters);
 
-			if (partsQueryDb.Any() is not true)
+			if (parts.Any() is not true)
 			{
 				return BadRequest("Nema traženog dela.");
 			}
 
 			// Query Db for part category
-			string sqlPartCategoriesQueryDb = @$"
+			string sqlQueryPartCategories = @$"
 				SELECT *
 				FROM [dbo].[PartCategories]
 				WHERE [PartCategoryId] = @PartCategoryIdParam
 				";
 
-			IEnumerable<PartCategoryModel> partCategoriesQueryDb =
-				_dapper.QuerySql<PartCategoryModel>(sqlPartCategoriesQueryDb, sqlParameters);
+			IEnumerable<PartCategoryModel> partCategories =
+				_dapper.QuerySql<PartCategoryModel>(sqlQueryPartCategories, sqlParameters);
 
-			if (partCategoriesQueryDb.Any() is not true)
+			if (partCategories.Any() is not true)
 			{
 				return BadRequest("Nema tražene kategorije.");
 			}
 
 			// Update part
-			string sql = @$"
+			string sqlExecute = @$"
 				UPDATE [dbo].[Parts]
 				SET
 					[PartCategoryId] = @PartCategoryIdParam,
@@ -131,7 +132,7 @@ namespace PartsInventoryManagement.Api.Controllers
 				WHERE [PartId] = @PartIdParam
 				";
 
-			if (_dapper.ExecuteSql(sql, sqlParameters) is not true)
+			if (_dapper.ExecuteSql(sqlExecute, sqlParameters) is not true)
 			{
 				return BadRequest("Greška prilikom izmene dela.");
 			}
@@ -152,33 +153,43 @@ namespace PartsInventoryManagement.Api.Controllers
 			sqlParameters.Add("@PartIdParam", partId, DbType.Int32);
 
 			// Query Db for part
-			string sqlPartQueryDb = @$"
+			string sqlQueryParts = @$"
 				SELECT *
 				FROM [dbo].[Parts]
 				WHERE [PartId] = @PartIdParam
 				";
 
-			IEnumerable<PartModel> partsQueryDb =
-				_dapper.QuerySql<PartModel>(sqlPartQueryDb, sqlParameters);
+			IEnumerable<PartModel> parts =
+				_dapper.QuerySql<PartModel>(sqlQueryParts, sqlParameters);
 
-			if (partsQueryDb.Any() is not true)
+			if (parts.Any() is not true)
 			{
 				return BadRequest("Nema traženog dela.");
 			}
 
 			// Delete part
-			string sql = @$"
+			try
+			{
+				string sqlExecute = @$"
 				DELETE
 				FROM [dbo].[Parts]
 				WHERE [PartId] = @PartIdParam
 				";
 
-			if (_dapper.ExecuteSql(sql, sqlParameters) is not true)
+				if (_dapper.ExecuteSql(sqlExecute, sqlParameters) is not true)
+				{
+					return BadRequest("Greška prilikom brisanja dela.");
+				}
+			}
+			catch (SqlException ex)
 			{
-				return BadRequest("Greška prilikom brisanja dela.");
+				if (ex.Number.Equals(547))
+				{
+					return BadRequest("Nije moguće izbrisati deo jer postoje povezani elementi.");
+				}
 			}
 
-			return Ok(partsQueryDb);
+			return Ok(parts);
 		}
 
 		// Read ById
@@ -194,13 +205,13 @@ namespace PartsInventoryManagement.Api.Controllers
 			sqlParameters.Add("@PartIdParam", partId, DbType.Int32);
 
 			// Query Db by part id
-			string sql = @$"
+			string sqlQuery = @$"
 				SELECT [PartId], [PartCategoryId], [PartName]
 				FROM [dbo].[Parts]
 				WHERE [PartId] = @PartIdParam
 				";
 
-			IEnumerable<PartModel> parts = _dapper.QuerySql<PartModel>(sql, sqlParameters);
+			IEnumerable<PartModel> parts = _dapper.QuerySql<PartModel>(sqlQuery, sqlParameters);
 
 			return Ok(parts);
 		}
@@ -217,51 +228,51 @@ namespace PartsInventoryManagement.Api.Controllers
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@PartCategoryIdParam", partCategoryId, DbType.Int32);
 
-			// Query Db for part category
-			string sqlPartCategoriesQueryDb = @$"
+			// Query part categories
+			string sqlQueryPartCategories = @$"
 				SELECT *
 				FROM [dbo].[PartCategories]
 				WHERE [PartCategoryId] = @PartCategoryIdParam
 				";
 
-			IEnumerable<PartCategoryModel> partCategoriesQueryDb =
-				_dapper.QuerySql<PartCategoryModel>(sqlPartCategoriesQueryDb, sqlParameters);
+			IEnumerable<PartCategoryModel> partCategories =
+				_dapper.QuerySql<PartCategoryModel>(sqlQueryPartCategories, sqlParameters);
 
-			if (partCategoriesQueryDb.Any() is not true)
+			if (partCategories.Any() is not true)
 			{
-				return Conflict("Nema tražene kategorije.");
+				return BadRequest("Nema tražene kategorije.");
 			}
 
-			// Query Db by part id
-			string sql = @$"
+			// Query parts
+			string sqlQuery = @$"
 				SELECT [PartId], [PartCategoryId], [PartName]
 				FROM [dbo].[Parts]
 				WHERE [PartCategoryId] = @PartCategoryIdParam
 				";
 
-			IEnumerable<PartModel> parts = _dapper.QuerySql<PartModel>(sql, sqlParameters);
+			IEnumerable<PartModel> parts = _dapper.QuerySql<PartModel>(sqlQuery, sqlParameters);
 
 			return Ok(parts);
 		}
 
 		// Read LikeName
 		[HttpGet("name/{partName}")]
-		public IActionResult GetPartLikeName(string partName)
+		public IActionResult GetPartsLikeName(string partName)
 		{
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@PartNameParam", partName, DbType.String);
 
-			// Query Db by part partial name
-			string sql = @$"
+			// Query parts
+			string sqlQuery = @$"
 				SELECT [PartId], [PartCategoryId], [PartName]
 				FROM [dbo].[Parts]
 				WHERE [PartName] LIKE  '%' + @PartNameParam + '%'
 				";
 
-			IEnumerable<PartModel> partCategories =
-				_dapper.QuerySql<PartModel>(sql, sqlParameters);
+			IEnumerable<PartModel> parts =
+				_dapper.QuerySql<PartModel>(sqlQuery, sqlParameters);
 
-			return Ok(partCategories);
+			return Ok(parts);
 		}
 	}
 }

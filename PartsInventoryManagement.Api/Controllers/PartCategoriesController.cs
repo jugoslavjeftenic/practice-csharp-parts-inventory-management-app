@@ -149,9 +149,9 @@ namespace PartsInventoryManagement.Api.Controllers
 			}
 			catch (SqlException ex)
 			{
-				if (ex.Number == 547)
+				if (ex.Number.Equals(547))
 				{
-					return BadRequest("Nije moguće izbrisati kategoriju jer postoje povezani delovi.");
+					return BadRequest("Nije moguće izbrisati kategoriju jer postoje povezani elementi.");
 				}
 			}
 
