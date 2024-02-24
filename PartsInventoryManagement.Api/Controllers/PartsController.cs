@@ -196,7 +196,7 @@ namespace PartsInventoryManagement.Api.Controllers
 
 		// Read ById
 		[HttpGet("{partId:int}")]
-		public IActionResult GetPartsById(int partId)
+		public IActionResult GetPartById(int partId)
 		{
 			if (partId < 1)
 			{
