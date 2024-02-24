@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using PartsInventoryManagement.Api.Data;
 using PartsInventoryManagement.Api.Dtos;
 using PartsInventoryManagement.Api.Models;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -273,6 +274,89 @@ namespace PartsInventoryManagement.Api.Controllers
 				_dapper.QuerySql<LocationModel>(sqlQuery, sqlParameters);
 
 			return Ok(locations);
+		}
+
+		//Seed
+		[HttpPost("seed")]
+		public IActionResult SeedLocations()
+		{
+			int counter = 0;
+			List<NewLocationDTO> newLocationsList =
+			[
+				new NewLocationDTO {
+					LocationAlpha = "SU", LocationName = "Subotica", LocationHexColor = "FFFF00"},
+				new NewLocationDTO {
+					LocationAlpha = "NS", LocationName = "Novi Sad", LocationHexColor = "FFE699"},
+				new NewLocationDTO {
+					LocationAlpha = "BG", LocationName = "Beograd", LocationHexColor = "FFFF00"},
+				new NewLocationDTO {
+					LocationAlpha = "ŠA", LocationName = "Šabac", LocationHexColor = "B4C6E7"},
+				new NewLocationDTO {
+					LocationAlpha = "SD", LocationName = "Smederevo", LocationHexColor = "92D050"},
+				new NewLocationDTO {
+					LocationAlpha = "PA", LocationName = "Pančevo", LocationHexColor = "92D050"},
+				new NewLocationDTO {
+					LocationAlpha = "NI", LocationName = "Niš", LocationHexColor = "BDD7EE"},
+				new NewLocationDTO {
+					LocationAlpha = "VR", LocationName = "Vranje", LocationHexColor = "BDD7EE"},
+				new NewLocationDTO {
+					LocationAlpha = "ZA", LocationName = "Zaječar", LocationHexColor = "BDD7EE"},
+				new NewLocationDTO {
+					LocationAlpha = "KV", LocationName = "Kraljevo", LocationHexColor = "BDD7EE"},
+				new NewLocationDTO {
+					LocationAlpha = "KG", LocationName = "Kragujevac", LocationHexColor = "BDD7EE"},
+				new NewLocationDTO {
+					LocationAlpha = "UE", LocationName = "Užice", LocationHexColor = "BDD7EE"},
+				new NewLocationDTO {
+					LocationAlpha = "KS", LocationName = "Kruševac", LocationHexColor = "BDD7EE"},
+			];
+
+			foreach (var newLocation in newLocationsList)
+			{
+				DynamicParameters sqlParameters = new();
+				sqlParameters.Add("@LocationAlphaParam", newLocation.LocationAlpha, DbType.String);
+				sqlParameters.Add("@LocationNameParam", newLocation.LocationName, DbType.String);
+				sqlParameters.Add("@LocationHexColorParam", newLocation.LocationHexColor, DbType.String);
+
+				// Query locations
+				string sqlQueryLocations = @$"
+				SELECT *
+				FROM [dbo].[Locations]
+				WHERE [LocationAlpha] = @LocationAlphaParam OR [LocationName] = @LocationNameParam
+				";
+
+				IEnumerable<LocationModel> locations =
+					_dapper.QuerySql<LocationModel>(sqlQueryLocations, sqlParameters);
+
+				if (locations.Any())
+				{
+					continue;
+				}
+
+				// Insert location
+				string sqlExecute = @$"
+				INSERT INTO [dbo].[Locations] (
+					[LocationAlpha],
+					[LocationName],
+					[LocationHexColor]
+				) VALUES (
+					@LocationAlphaParam,
+					@LocationNameParam,
+					@LocationHexColorParam
+				)";
+
+				try
+				{
+					_dapper.ExecuteSql(sqlExecute, sqlParameters);
+					counter++;
+				}
+				catch (Exception)
+				{
+					continue;
+				}
+			}
+
+			return Ok($"Dodavanje podataka završeno. Ukupno dodato: {counter}");
 		}
 	}
 }
