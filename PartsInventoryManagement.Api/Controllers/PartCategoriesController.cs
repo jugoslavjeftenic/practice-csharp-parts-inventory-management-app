@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using PartsInventoryManagement.Api.Data;
 using PartsInventoryManagement.Api.Dtos;
 using PartsInventoryManagement.Api.Models;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -214,11 +215,11 @@ namespace PartsInventoryManagement.Api.Controllers
 			int counter = 0;
 			List<NewPartCategoryDTO> newPartCategoriesList =
 			[
-				new NewPartCategoryDTO { PartCategoryName ="Diskovi"},
-				new NewPartCategoryDTO { PartCategoryName ="Memorije"},
-				new NewPartCategoryDTO { PartCategoryName ="Periferije"},
-				new NewPartCategoryDTO { PartCategoryName ="Svičevi"},
-				new NewPartCategoryDTO { PartCategoryName ="Kablovi"}
+				new NewPartCategoryDTO { PartCategoryName = "Diskovi"},
+				new NewPartCategoryDTO { PartCategoryName = "Memorije"},
+				new NewPartCategoryDTO { PartCategoryName = "Periferije"},
+				new NewPartCategoryDTO { PartCategoryName = "Svičevi"},
+				new NewPartCategoryDTO { PartCategoryName = "Kablovi"}
 			];
 
 			foreach (var newPartCategory in newPartCategoriesList)
@@ -255,9 +256,9 @@ namespace PartsInventoryManagement.Api.Controllers
 					_dapper.ExecuteSql(sqlExecute, sqlParameters);
 					counter++;
 				}
-				catch (System.Exception)
+				catch (Exception)
 				{
-					throw;
+					continue;
 				}
 			}
 
