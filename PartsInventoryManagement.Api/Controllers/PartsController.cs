@@ -186,7 +186,8 @@ namespace PartsInventoryManagement.Api.Controllers
 			{
 				if (ex.Number.Equals(547))
 				{
-					return BadRequest("Nije moguće izbrisati deo jer postoje povezani elementi.");
+					return BadRequest
+						("Nije moguće izbrisati deo. Postoje povezani elementi u tabeli inventara.");
 				}
 			}
 
