@@ -13,7 +13,7 @@ using System.Linq;
 namespace PartsInventoryManagement.Api.Controllers
 {
 	[ApiController]
-	[Route("[controller]")]
+	[Route("api/v1/[controller]")]
 	public class UsersController(IConfiguration config) : ControllerBase
 	{
 		private readonly DbContextDapper _dapper = new(config);
@@ -25,41 +25,39 @@ namespace PartsInventoryManagement.Api.Controllers
 		{
 			if (userDto.Password.Equals(userDto.PasswordConfirm) is not true)
 			{
-				return BadRequest("Lozinke se ne podudaraju.");
+				return BadRequest("Potvrda lozinke se ne podudara.");
 			}
 
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@UserNameParam", userDto.UserName, DbType.String);
 			sqlParameters.Add("@LocationIdParam", userDto.LocationId, DbType.Int32);
-			sqlParameters.Add("@PasswordParam", userDto.Password, DbType.String);
-			sqlParameters.Add("@PasswordConfirmParam", userDto.PasswordConfirm, DbType.String);
 
-			// Query Db for user
-			string sqlUsersQueryDb = @$"
+			// Query users
+			string sqlQueryUsers = @$"
 				SELECT *
 				FROM [dbo].[Users]
 				WHERE [UserName] = @UserNameParam
 				";
 
-			IEnumerable<GetUsersDTO> usersQueryDb =
-				_dapper.QuerySql<GetUsersDTO>(sqlUsersQueryDb, sqlParameters);
+			IEnumerable<GetUsersDTO> users =
+				_dapper.QuerySql<GetUsersDTO>(sqlQueryUsers, sqlParameters);
 
-			if (usersQueryDb.Any())
+			if (users.Any())
 			{
 				return BadRequest("Korisnik već postoji.");
 			}
 
-			// Query Db for location
-			string sqlLocationsQueryDb = @$"
+			// Query locations
+			string sqlQueryLocations = @$"
 				SELECT *
 				FROM [dbo].[Locations]
 				WHERE [LocationId] = @LocationIdParam
 				";
 
-			IEnumerable<LocationModel> locationsQueryDb =
-				_dapper.QuerySql<LocationModel>(sqlLocationsQueryDb, sqlParameters);
+			IEnumerable<LocationModel> locations =
+				_dapper.QuerySql<LocationModel>(sqlQueryLocations, sqlParameters);
 
-			if (locationsQueryDb.Any() is not true)
+			if (locations.Any() is not true)
 			{
 				return BadRequest("Nema tražene lokacije.");
 			}
@@ -70,7 +68,7 @@ namespace PartsInventoryManagement.Api.Controllers
 			sqlParameters.Add("@PasswordSaltParam", passwordSalt, DbType.Binary);
 
 			// Insert user
-			string sql = @$"
+			string sqlExecute = @$"
 				INSERT INTO [dbo].[Users] (
 					[UserName],
 					[LocationId],
@@ -83,7 +81,7 @@ namespace PartsInventoryManagement.Api.Controllers
 					@PasswordSaltParam
 				)";
 
-			if (_dapper.ExecuteSql(sql, sqlParameters) is not true)
+			if (_dapper.ExecuteSql(sqlExecute, sqlParameters) is not true)
 			{
 				return BadRequest("Greška prilikom dodavanja korisnika.");
 			}
@@ -95,14 +93,14 @@ namespace PartsInventoryManagement.Api.Controllers
 		[HttpGet]
 		public IActionResult GetUsers()
 		{
-			string sql = @$"
+			string sqlQuery = @$"
 				SELECT
 					[UserId],
 					[UserName],
 					[LocationId]
 				FROM [dbo].[Users]";
 
-			IEnumerable<GetUsersDTO> users = _dapper.QuerySql<GetUsersDTO>(sql);
+			IEnumerable<GetUsersDTO> users = _dapper.QuerySql<GetUsersDTO>(sqlQuery);
 
 			return Ok(users);
 		}
@@ -118,45 +116,46 @@ namespace PartsInventoryManagement.Api.Controllers
 
 			if (editUserDTO.Password.Equals(editUserDTO.PasswordConfirm) is not true)
 			{
-				return BadRequest("Lozinke se ne podudaraju.");
+				return BadRequest("Potvrda lozinke se ne podudara.");
 			}
 
-			// Query Db for user
-			string sqlUsersQueryDb = @$"
+			// Query users
+			string sqlQueryUsers = @$"
 				SELECT *
 				FROM [dbo].[Users]
 				WHERE [UserId] = @UserIdParam
 				";
 
-			IEnumerable<GetUsersDTO> usersQueryDb =
-				_dapper.QuerySql<GetUsersDTO>(sqlUsersQueryDb, sqlParameters);
+			IEnumerable<GetUsersDTO> users =
+				_dapper.QuerySql<GetUsersDTO>(sqlQueryUsers, sqlParameters);
 
-			if (usersQueryDb.Any() is not true)
+			if (users.Any() is not true)
 			{
 				return BadRequest("Nema traženog korisnika.");
 			}
 
-			// Query Db for location
-			string sqlLocationsQueryDb = @$"
+			// Query locations
+			string sqlQueryLocations = @$"
 				SELECT *
 				FROM [dbo].[Locations]
 				WHERE [LocationId] = @LocationIdParam
 				";
 
-			IEnumerable<LocationModel> locationsQueryDb =
-				_dapper.QuerySql<LocationModel>(sqlLocationsQueryDb, sqlParameters);
+			IEnumerable<LocationModel> locations =
+				_dapper.QuerySql<LocationModel>(sqlQueryLocations, sqlParameters);
 
-			if (locationsQueryDb.Any() is not true)
+			if (locations.Any() is not true)
 			{
 				return BadRequest("Nema tražene lokacije.");
 			}
 
-			// Update user
+			// Hash password
 			var (passwordHash, passwordSalt) = _authHelper.HashPassword(editUserDTO.Password);
 			sqlParameters.Add("@PasswordHashParam", passwordHash, DbType.Binary);
 			sqlParameters.Add("@PasswordSaltParam", passwordSalt, DbType.Binary);
 
-			string sql = @$"
+			// Update user
+			string sqlExecute = @$"
 				UPDATE [dbo].[Users]
 				SET
 					[UserName] = @UserNameParam,
@@ -166,7 +165,7 @@ namespace PartsInventoryManagement.Api.Controllers
 				WHERE [UserId] = @UserIdParam
 				";
 
-			if (_dapper.ExecuteSql(sql, sqlParameters) is not true)
+			if (_dapper.ExecuteSql(sqlExecute, sqlParameters) is not true)
 			{
 				return BadRequest("Greška prilikom izmene korisnika.");
 			}
@@ -186,34 +185,45 @@ namespace PartsInventoryManagement.Api.Controllers
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@UserIdParam", userId, DbType.Int32);
 
-			// Query Db for part
-			string sqlUserQueryDb = @$"
+			// Query users
+			string sqlQueryUsers = @$"
 				SELECT *
 				FROM [dbo].[Users]
 				WHERE [UserId] = @UserIdParam
 				";
 
-			IEnumerable<GetUsersDTO> usersQueryDb =
-				_dapper.QuerySql<GetUsersDTO>(sqlUserQueryDb, sqlParameters);
+			IEnumerable<GetUsersDTO> users =
+				_dapper.QuerySql<GetUsersDTO>(sqlQueryUsers, sqlParameters);
 
-			if (usersQueryDb.Any() is not true)
+			if (users.Any() is not true)
 			{
 				return BadRequest("Nema traženog korisnika.");
 			}
 
 			// Delete user
-			string sql = @$"
+			try
+			{
+				string sqlExecute = @$"
 				DELETE
 				FROM [dbo].[Users]
 				WHERE [UserId] = @UserIdParam
 				";
 
-			if (_dapper.ExecuteSql(sql, sqlParameters) is not true)
+				if (_dapper.ExecuteSql(sqlExecute, sqlParameters) is not true)
+				{
+					return BadRequest("Greška prilikom brisanja korisnika.");
+				}
+			}
+			catch (SqlException ex)
 			{
-				return BadRequest("Greška prilikom brisanja korisnika.");
+				if (ex.Number.Equals(547))
+				{
+					return BadRequest
+						("Nije moguće izbrisati korisnika. Postoje povezani elementi u tabeli inventara.");
+				}
 			}
 
-			return Ok(usersQueryDb);
+			return Ok(users);
 		}
 
 		// Read ById
@@ -228,34 +238,34 @@ namespace PartsInventoryManagement.Api.Controllers
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@UserIdParam", userId, DbType.Int32);
 
-			// Query Db for user
-			string sql = @$"
+			// Query users
+			string sqlQuery = @$"
 				SELECT [UserId], [UserName], [LocationId]
 				FROM [dbo].[Users]
 				WHERE [UserId] = @UserIdParam
 				";
 
-			IEnumerable<GetUsersDTO> user = _dapper.QuerySql<GetUsersDTO>(sql, sqlParameters);
+			IEnumerable<GetUsersDTO> user = _dapper.QuerySql<GetUsersDTO>(sqlQuery, sqlParameters);
 
 			return Ok(user);
 		}
 
 		// Read LikeName
 		[HttpGet("name/{userName}")]
-		public IActionResult GetUserLikeName(string userName)
+		public IActionResult GetUsersLikeName(string userName)
 		{
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@UserNameParam", userName, DbType.String);
 
-			// Query Db for user
-			string sql = @$"
+			// Query users
+			string sqlQuery = @$"
 				SELECT [UserId], [UserName], [LocationId]
 				FROM [dbo].[Users]
 				WHERE [UserName] LIKE  '%' + @UserNameParam + '%'
 				";
 
 			IEnumerable<GetUsersDTO> users =
-				_dapper.QuerySql<GetUsersDTO>(sql, sqlParameters);
+				_dapper.QuerySql<GetUsersDTO>(sqlQuery, sqlParameters);
 
 			return Ok(users);
 		}
@@ -272,29 +282,29 @@ namespace PartsInventoryManagement.Api.Controllers
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@LocationIdParam", locationId, DbType.Int32);
 
-			// Query Db for location
-			string sqlLocationsQueryDb = @$"
+			// Query locations
+			string sqlQueryLocations = @$"
 				SELECT *
 				FROM [dbo].[Locations]
 				WHERE [LocationId] = @LocationIdParam
 				";
 
-			IEnumerable<LocationModel> locationsQueryDb =
-				_dapper.QuerySql<LocationModel>(sqlLocationsQueryDb, sqlParameters);
+			IEnumerable<LocationModel> locations =
+				_dapper.QuerySql<LocationModel>(sqlQueryLocations, sqlParameters);
 
-			if (locationsQueryDb.Any() is not true)
+			if (locations.Any() is not true)
 			{
 				return BadRequest("Nema tražene lokacije.");
 			}
 
-			// Query Db for users
-			string sql = @$"
+			// Query users
+			string sqlQuery = @$"
 				SELECT [UserId], [UserName], [LocationId]
 				FROM [dbo].[Users]
 				WHERE [LocationId] = @LocationIdParam
 				";
 
-			IEnumerable<GetUsersDTO> users = _dapper.QuerySql<GetUsersDTO>(sql, sqlParameters);
+			IEnumerable<GetUsersDTO> users = _dapper.QuerySql<GetUsersDTO>(sqlQuery, sqlParameters);
 
 			return Ok(users);
 		}
@@ -306,15 +316,15 @@ namespace PartsInventoryManagement.Api.Controllers
 			sqlParameters.Add("@UserNameParam", login.UserName, DbType.String);
 			sqlParameters.Add("@PasswordParam", login.Password, DbType.String);
 
-			// Query Db for user
-			string sqlHashAndSaltQueryDb = @$"
+			// Query users
+			string sqlQueryHashAndSalt = @$"
 				SELECT [UserId], [PasswordHash], [PasswordSalt]
 				FROM [dbo].[Users]
 				WHERE [UserName] = @UserNameParam
 				";
 
 			IEnumerable<LoginHashAndSaltDTO> users =
-				_dapper.QuerySql<LoginHashAndSaltDTO>(sqlHashAndSaltQueryDb, sqlParameters);
+				_dapper.QuerySql<LoginHashAndSaltDTO>(sqlQueryHashAndSalt, sqlParameters);
 
 			if (users.Any() is not true)
 			{
