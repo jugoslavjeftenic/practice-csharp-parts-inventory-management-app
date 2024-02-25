@@ -167,8 +167,8 @@ namespace PartsInventoryManagement.Api.Controllers
 			{
 				if (ex.Number.Equals(547))
 				{
-					return BadRequest
-						("Nije moguće izbrisati lokaciju. Postoje povezani elementi u tabeli korisnika.");
+					return BadRequest("Nije moguće izbrisati lokaciju." +
+						" Postoje povezani elementi u tabeli korisnika ili inventara.");
 				}
 			}
 
