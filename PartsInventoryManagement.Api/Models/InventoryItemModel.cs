@@ -1,6 +1,6 @@
 ﻿namespace PartsInventoryManagement.Api.Models
 {
-	public class InventoryModel
+	public class InventoryItemModel
 	{
 		public int InventoryId { get; set; }
 		public int PartId { get; set; }

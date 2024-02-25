@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using PartsInventoryManagement.Api.Data;
 using PartsInventoryManagement.Api.Dtos;
@@ -11,7 +12,7 @@ using System.Linq;
 namespace PartsInventoryManagement.Api.Controllers
 {
 	[ApiController]
-	[Route("api/[controller]")]
+	[Route("api/v1/[controller]")]
 	public class InventoryController(IConfiguration config) : ControllerBase
 	{
 		private readonly DbContextDapper _dapper = new(config);
@@ -25,53 +26,53 @@ namespace PartsInventoryManagement.Api.Controllers
 			sqlParameters.Add("@LocationIdParam", inventoryItemDTODto.LocationId, DbType.Int32);
 			sqlParameters.Add("@PartQuantityParam", inventoryItemDTODto.PartQuantity, DbType.Int32);
 
-			// Query Db for inventory item
-			string sqlInventoryItemQueryDb = @$"
+			// Query inventory
+			string sqlQueryInventory = @$"
 				SELECT *
 				FROM [dbo].[Inventory]
 				WHERE [PartId] = @PartIdParam AND [LocationId] = @LocationIdParam
 				";
 
-			IEnumerable<InventoryModel> inventoryItemQueryDb =
-				_dapper.QuerySql<InventoryModel>(sqlInventoryItemQueryDb, sqlParameters);
+			IEnumerable<InventoryItemModel> inventory =
+				_dapper.QuerySql<InventoryItemModel>(sqlQueryInventory, sqlParameters);
 
-			if (inventoryItemQueryDb.Any())
+			if (inventory.Any())
 			{
-				return BadRequest("Inventarska stavka već postoji.");
+				return BadRequest("Inventarni predmet već postoji.");
 			}
 
-			// Query Db for part
-			string sqlPartsQueryDb = @$"
+			// Query parts
+			string sqlQueryParts = @$"
 				SELECT *
 				FROM [dbo].[Parts]
 				WHERE [PartId] = @PartIdParam
 				";
 
-			IEnumerable<PartModel> partsQueryDb =
-				_dapper.QuerySql<PartModel>(sqlPartsQueryDb, sqlParameters);
+			IEnumerable<PartModel> parts =
+				_dapper.QuerySql<PartModel>(sqlQueryParts, sqlParameters);
 
-			if (partsQueryDb.Any() is not true)
+			if (parts.Any() is not true)
 			{
 				return BadRequest("Nema traženog dela.");
 			}
 
-			// Query Db for location
-			string sqlLocationsQueryDb = @$"
+			// Query locations
+			string sqlQueryLocations = @$"
 				SELECT *
 				FROM [dbo].[Locations]
 				WHERE [LocationId] = @LocationIdParam
 				";
 
-			IEnumerable<LocationModel> locationsQueryDb =
-				_dapper.QuerySql<LocationModel>(sqlLocationsQueryDb, sqlParameters);
+			IEnumerable<LocationModel> locations =
+				_dapper.QuerySql<LocationModel>(sqlQueryLocations, sqlParameters);
 
-			if (locationsQueryDb.Any() is not true)
+			if (locations.Any() is not true)
 			{
 				return BadRequest("Nema tražene lokacije.");
 			}
 
 			// Insert inventory item
-			string sql = @$"
+			string sqlExecute = @$"
 				INSERT INTO [dbo].[Inventory] (
 					[PartId],
 					[LocationId],
@@ -82,9 +83,9 @@ namespace PartsInventoryManagement.Api.Controllers
 					@PartQuantityParam
 				)";
 
-			if (_dapper.ExecuteSql(sql, sqlParameters) is not true)
+			if (_dapper.ExecuteSql(sqlExecute, sqlParameters) is not true)
 			{
-				return BadRequest("Greška prilikom dodavanja inventarske stavke.");
+				return BadRequest("Greška prilikom dodavanja inventarnog predmeta.");
 			}
 
 			return Ok(inventoryItemDTODto);
@@ -92,9 +93,9 @@ namespace PartsInventoryManagement.Api.Controllers
 
 		// Read
 		[HttpGet]
-		public IActionResult GetInventoryItems()
+		public IActionResult GetInventory()
 		{
-			string sql = @$"
+			string sqlQuery = @$"
 				SELECT
 					[InventoryId],
 					[PartId],
@@ -103,14 +104,14 @@ namespace PartsInventoryManagement.Api.Controllers
 				FROM [dbo].[Inventory]
 				";
 
-			IEnumerable<InventoryModel> inventoryItems = _dapper.QuerySql<InventoryModel>(sql);
+			IEnumerable<InventoryItemModel> inventory = _dapper.QuerySql<InventoryItemModel>(sqlQuery);
 
-			return Ok(inventoryItems);
+			return Ok(inventory);
 		}
 
 		// Update
 		[HttpPut]
-		public IActionResult EditInventoryItem(InventoryModel inventoryItem)
+		public IActionResult EditInventoryItem(InventoryItemModel inventoryItem)
 		{
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@InventoryIdParam", inventoryItem.InventoryId, DbType.Int32);
@@ -118,53 +119,53 @@ namespace PartsInventoryManagement.Api.Controllers
 			sqlParameters.Add("@LocationIdParam", inventoryItem.LocationId, DbType.Int32);
 			sqlParameters.Add("@PartQuantityParam", inventoryItem.PartQuantity, DbType.Int32);
 
-			// Query Db for inventory item
-			string sqlInventoryItemQueryDb = @$"
+			// Query inventory
+			string sqlQueryInventory = @$"
 				SELECT *
 				FROM [dbo].[Inventory]
 				WHERE [InventoryId] = @InventoryIdParam
 				";
 
-			IEnumerable<InventoryModel> inventoryItemQueryDb =
-				_dapper.QuerySql<InventoryModel>(sqlInventoryItemQueryDb, sqlParameters);
+			IEnumerable<InventoryItemModel> inventory =
+				_dapper.QuerySql<InventoryItemModel>(sqlQueryInventory, sqlParameters);
 
-			if (inventoryItemQueryDb.Any() is not true)
+			if (inventory.Any() is not true)
 			{
-				return BadRequest("Nema tražene inventarske stavke.");
+				return BadRequest("Nema traženog inventarnog predmeta.");
 			}
 
-			// Query Db for part
-			string sqlPartsQueryDb = @$"
+			// Query parts
+			string sqlQueryParts = @$"
 				SELECT *
 				FROM [dbo].[Parts]
 				WHERE [PartId] = @PartIdParam
 				";
 
-			IEnumerable<PartModel> partsQueryDb =
-				_dapper.QuerySql<PartModel>(sqlPartsQueryDb, sqlParameters);
+			IEnumerable<PartModel> parts =
+				_dapper.QuerySql<PartModel>(sqlQueryParts, sqlParameters);
 
-			if (partsQueryDb.Any() is not true)
+			if (parts.Any() is not true)
 			{
 				return BadRequest("Nema traženog dela.");
 			}
 
-			// Query Db for location
-			string sqlLocationsQueryDb = @$"
+			// Query locations
+			string sqlQueryLocations = @$"
 				SELECT *
 				FROM [dbo].[Locations]
 				WHERE [LocationId] = @LocationIdParam
 				";
 
-			IEnumerable<LocationModel> locationsQueryDb =
-				_dapper.QuerySql<LocationModel>(sqlLocationsQueryDb, sqlParameters);
+			IEnumerable<LocationModel> locations =
+				_dapper.QuerySql<LocationModel>(sqlQueryLocations, sqlParameters);
 
-			if (locationsQueryDb.Any() is not true)
+			if (locations.Any() is not true)
 			{
 				return BadRequest("Nema tražene lokacije.");
 			}
 
 			// Update inventory item
-			string sql = @$"
+			string sqlExecute = @$"
 				UPDATE [dbo].[Inventory]
 				SET
 					[PartId] = @PartIdParam,
@@ -173,9 +174,9 @@ namespace PartsInventoryManagement.Api.Controllers
 				WHERE [InventoryId] = @InventoryIdParam
 				";
 
-			if (_dapper.ExecuteSql(sql, sqlParameters) is not true)
+			if (_dapper.ExecuteSql(sqlExecute, sqlParameters) is not true)
 			{
-				return BadRequest("Greška prilikom izmene dela.");
+				return BadRequest("Greška prilikom izmene inventarnog predmeta.");
 			}
 
 			return Ok(inventoryItem);
@@ -183,44 +184,44 @@ namespace PartsInventoryManagement.Api.Controllers
 
 		// Delete
 		[HttpDelete("{inventoryId:int}")]
-		public IActionResult DeleteInventoryId(int inventoryId)
+		public IActionResult DeleteInventoryItem(int inventoryId)
 		{
 			if (inventoryId < 1)
 			{
-				return BadRequest($"Id inventarske stavke mora da bude veći od 0.");
+				return BadRequest($"Id inventarnog predmeta mora da bude veći od 0.");
 			}
 
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@InventoryIdParam", inventoryId, DbType.Int32);
 
-			// Query Db for inventory item
-			string sqlInventoryItemQueryDb = @$"
+			// Query inventory
+			string sqlQueryInventory = @$"
 				SELECT *
 				FROM [dbo].[Inventory]
 				WHERE [InventoryId] = @InventoryIdParam
 				";
 
-			IEnumerable<InventoryModel> inventoryItemQueryDb =
-				_dapper.QuerySql<InventoryModel>(sqlInventoryItemQueryDb, sqlParameters);
+			IEnumerable<InventoryItemModel> inventory =
+				_dapper.QuerySql<InventoryItemModel>(sqlQueryInventory, sqlParameters);
 
-			if (inventoryItemQueryDb.Any() is not true)
+			if (inventory.Any() is not true)
 			{
-				return BadRequest("Nema tražene inventarske stavke.");
+				return BadRequest("Nema traženog inventarnog predmeta.");
 			}
 
 			// Delete inventory item
-			string sql = @$"
+			string sqlExecute = @$"
 				DELETE
 				FROM [dbo].[Inventory]
 				WHERE [InventoryId] = @InventoryIdParam
 				";
 
-			if (_dapper.ExecuteSql(sql, sqlParameters) is not true)
+			if (_dapper.ExecuteSql(sqlExecute, sqlParameters) is not true)
 			{
-				return BadRequest("Greška prilikom brisanja inventarske stavke.");
+				return BadRequest("Greška prilikom brisanja inventarnog predmeta.");
 			}
 
-			return Ok(inventoryItemQueryDb);
+			return Ok(inventory);
 		}
 
 		// Read ById
@@ -229,14 +230,14 @@ namespace PartsInventoryManagement.Api.Controllers
 		{
 			if (inventoryId < 1)
 			{
-				return BadRequest($"Id inventarne stavke mora da bude veći od 0.");
+				return BadRequest($"Id inventarnog predmeta mora da bude veći od 0.");
 			}
 
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@InventoryIdParam", inventoryId, DbType.Int32);
 
-			// Query Db by part id
-			string sql = @$"
+			// Query inventory
+			string sqlQuery = @$"
 				SELECT
 					[InventoryId],
 					[PartId],
@@ -246,14 +247,15 @@ namespace PartsInventoryManagement.Api.Controllers
 				WHERE [InventoryId] = @InventoryIdParam
 				";
 
-			IEnumerable<InventoryModel> inventoryItems = _dapper.QuerySql<InventoryModel>(sql, sqlParameters);
+			IEnumerable<InventoryItemModel> inventory =
+				_dapper.QuerySql<InventoryItemModel>(sqlQuery, sqlParameters);
 
-			return Ok(inventoryItems);
+			return Ok(inventory);
 		}
 
 		// Read ByPartId
 		[HttpGet("part/{partId:int}")]
-		public IActionResult GetInventoryItemByPartId(int partId)
+		public IActionResult GetInventoryByPartId(int partId)
 		{
 			if (partId < 1)
 			{
@@ -263,8 +265,8 @@ namespace PartsInventoryManagement.Api.Controllers
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@PartIdParam", partId, DbType.Int32);
 
-			// Query Db by part id
-			string sql = @$"
+			// Query inventory
+			string sqlQuery = @$"
 				SELECT
 					[InventoryId],
 					[PartId],
@@ -274,14 +276,15 @@ namespace PartsInventoryManagement.Api.Controllers
 				WHERE [PartId] = @PartIdParam
 				";
 
-			IEnumerable<InventoryModel> inventoryItems = _dapper.QuerySql<InventoryModel>(sql, sqlParameters);
+			IEnumerable<InventoryItemModel> inventory =
+				_dapper.QuerySql<InventoryItemModel>(sqlQuery, sqlParameters);
 
-			return Ok(inventoryItems);
+			return Ok(inventory);
 		}
 
 		// Read ByLocationId
 		[HttpGet("location/{locationId:int}")]
-		public IActionResult GetInventoryItemByLocationId(int locationId)
+		public IActionResult GetInventoryByLocationId(int locationId)
 		{
 			if (locationId < 1)
 			{
@@ -291,8 +294,8 @@ namespace PartsInventoryManagement.Api.Controllers
 			DynamicParameters sqlParameters = new();
 			sqlParameters.Add("@LocationIdParam", locationId, DbType.Int32);
 
-			// Query Db by location id
-			string sql = @$"
+			// Query inventory
+			string sqlQuery = @$"
 				SELECT
 					[InventoryId],
 					[PartId],
@@ -302,9 +305,10 @@ namespace PartsInventoryManagement.Api.Controllers
 				WHERE [LocationId] = @LocationIdParam
 				";
 
-			IEnumerable<InventoryModel> inventoryItems = _dapper.QuerySql<InventoryModel>(sql, sqlParameters);
+			IEnumerable<InventoryItemModel> inventory =
+				_dapper.QuerySql<InventoryItemModel>(sqlQuery, sqlParameters);
 
-			return Ok(inventoryItems);
+			return Ok(inventory);
 		}
 	}
 }
