@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using PartsInventoryManagement.Api.Data;
 using PartsInventoryManagement.Api.Dtos;
 using PartsInventoryManagement.Api.Models;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -309,6 +310,73 @@ namespace PartsInventoryManagement.Api.Controllers
 				_dapper.QuerySql<InventoryItemModel>(sqlQuery, sqlParameters);
 
 			return Ok(inventory);
+		}
+
+		//Seed
+		[HttpPost("randomseed")]
+		public IActionResult RandomSeedInventory()
+		{
+			int counter = 0;
+			Random random = new();
+
+			// Query parts
+			string sqlQueryParts = @$"
+				SELECT [PartId]
+				FROM [dbo].[Parts]
+				";
+			int[] partsIdsArray = _dapper.QuerySql<int>(sqlQueryParts).ToArray();
+
+			// Query locations
+			string sqlQueryLocations = @$"
+				SELECT [LocationId]
+				FROM [dbo].[Locations]
+				";
+			int[] locationsIdsArray = _dapper.QuerySql<int>(sqlQueryLocations).ToArray();
+
+			for (int i = 0; i < 10; i++)
+			{
+				int randomPart = partsIdsArray[random.Next(0, partsIdsArray.Length)];
+				int randomLocation = locationsIdsArray[random.Next(0, locationsIdsArray.Length)];
+
+				// Query inventory
+				string sqlQueryInventory = @$"
+				SELECT *
+				FROM [dbo].[Inventory]
+				WHERE [PartId] = {randomPart} AND [LocationId] = {randomLocation}
+				";
+
+				IEnumerable<NewInventoryItemDTO> inventory =
+					_dapper.QuerySql<NewInventoryItemDTO>(sqlQueryInventory);
+
+				if (inventory.Any())
+				{
+					continue;
+				}
+
+				// Insert inventory item
+				string sqlExecute = @$"
+				INSERT INTO [dbo].[Inventory] (
+					[PartId],
+					[LocationId],
+					[PartQuantity]
+				) VALUES (
+					{randomPart},
+					{randomLocation},
+					{random.Next(1, 51)}
+				)";
+
+				try
+				{
+					_dapper.ExecuteSql(sqlExecute);
+					counter++;
+				}
+				catch (Exception)
+				{
+					continue;
+				}
+			}
+
+			return Ok($"Dodavanje podataka završeno. Ukupno dodato: {counter}");
 		}
 	}
 }
