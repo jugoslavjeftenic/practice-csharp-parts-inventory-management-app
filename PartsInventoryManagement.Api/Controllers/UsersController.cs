@@ -6,6 +6,7 @@ using PartsInventoryManagement.Api.Data;
 using PartsInventoryManagement.Api.Dtos;
 using PartsInventoryManagement.Api.Helpers;
 using PartsInventoryManagement.Api.Models;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -375,6 +376,104 @@ namespace PartsInventoryManagement.Api.Controllers
 				//{ "token", _authHelper.CreateToken(users.First().UserId) }
 				{ "token", "Bearer " + _authHelper.CreateToken(userId) }
 			});
+		}
+
+		//Seed
+		[HttpPost("seed")]
+		public IActionResult SeedUsers()
+		{
+			int counter = 0;
+			List<NewUserDTO> newUsersList =
+			[
+				new NewUserDTO {
+					UserName = "Zeleni Zub", LocationId = 1, Password = "zz", PasswordConfirm = "zz"},
+				new NewUserDTO {
+					UserName = "Beavis", LocationId = 2, Password = "zz", PasswordConfirm = "zz"},
+				new NewUserDTO {
+					UserName = "Butthead", LocationId = 2, Password = "zz", PasswordConfirm = "zz"},
+				new NewUserDTO {
+					UserName = "Mirko", LocationId = 3, Password = "zz", PasswordConfirm = "zz"},
+				new NewUserDTO {
+					UserName = "Slavko", LocationId = 3, Password = "zz", PasswordConfirm = "zz"},
+			];
+
+			foreach (var newUser in newUsersList)
+			{
+				DynamicParameters sqlParameters = new();
+				sqlParameters.Add("@UserNameParam", newUser.UserName, DbType.String);
+
+				// Query users
+				string sqlQueryUsers = @$"
+				SELECT *
+				FROM [dbo].[Users]
+				WHERE [UserName] = @UserNameParam
+				";
+
+				IEnumerable<GetUsersDTO> users =
+					_dapper.QuerySql<GetUsersDTO>(sqlQueryUsers, sqlParameters);
+
+				if (users.Any())
+				{
+					continue;
+				}
+
+				// Query locations
+				string locationName = newUser.LocationId switch
+				{
+					1 => "Subotica",
+					2 => "Novi Sad",
+					3 => "Beograd",
+					_ => String.Empty,
+				};
+
+				sqlParameters.Add("@LocationNameParam", locationName, DbType.String);
+
+				string sqlQueryLocations = @$"
+				SELECT *
+				FROM [dbo].[Locations]
+				WHERE [LocationName] = @LocationNameParam
+				";
+
+				IEnumerable<LocationModel> locations =
+					_dapper.QuerySql<LocationModel>(sqlQueryLocations, sqlParameters);
+
+				if (locations.Any() is not true)
+				{
+					continue;
+				}
+
+				sqlParameters.Add("@LocationsIdParam", locations.First().LocationId, DbType.Int32);
+
+				// Hash password
+				var (passwordHash, passwordSalt) = _authHelper.HashPassword(newUser.Password);
+				sqlParameters.Add("@PasswordHashParam", passwordHash, DbType.Binary);
+				sqlParameters.Add("@PasswordSaltParam", passwordSalt, DbType.Binary);
+
+				// Insert user
+				string sqlExecute = @$"
+				INSERT INTO [dbo].[Users] (
+					[UserName],
+					[LocationId],
+					[PasswordHash],
+					[PasswordSalt]
+				) VALUES (
+					@UserNameParam,
+					@LocationsIdParam,
+					@PasswordHashParam,
+					@PasswordSaltParam
+				)";
+				try
+				{
+					_dapper.ExecuteSql(sqlExecute, sqlParameters);
+					counter++;
+				}
+				catch (Exception)
+				{
+					continue;
+				}
+			}
+
+			return Ok($"Dodavanje podataka završeno. Ukupno dodato: {counter}");
 		}
 	}
 }
