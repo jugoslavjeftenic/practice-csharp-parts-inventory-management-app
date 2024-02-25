@@ -394,7 +394,7 @@ namespace PartsInventoryManagement.Api.Controllers
 				new NewUserDTO {
 					UserName = "Mirko", LocationId = 3, Password = "zz", PasswordConfirm = "zz"},
 				new NewUserDTO {
-					UserName = "Slavko", LocationId = 3, Password = "zz", PasswordConfirm = "zz"},
+					UserName = "Slavko", LocationId = 3, Password = "zz", PasswordConfirm = "zz"}
 			];
 
 			foreach (var newUser in newUsersList)
