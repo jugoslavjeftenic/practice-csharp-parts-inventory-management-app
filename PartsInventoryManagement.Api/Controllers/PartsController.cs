@@ -378,8 +378,7 @@ namespace PartsInventoryManagement.Api.Controllers
 				}
 				catch (Exception)
 				{
-					throw;
-					//continue;
+					continue;
 				}
 			}
 
