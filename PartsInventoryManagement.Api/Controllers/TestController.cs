@@ -6,7 +6,7 @@ using System;
 namespace PartsInventoryManagement.Api.Controllers
 {
 	[ApiController]
-	[Route("[controller]")]
+	[Route("api/v1/[controller]")]
 	public class TestController(IConfiguration config) : ControllerBase
 	{
 		private readonly DbContextDapper _dapper = new(config);
