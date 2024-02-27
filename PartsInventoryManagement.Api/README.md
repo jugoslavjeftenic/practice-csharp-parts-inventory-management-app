@@ -1,8 +1,5 @@
-# C# Parts Inventory Management App - C# practice project
-by Jugoslav Jeftenic
-
-PartsInventoryManagement.Api<br>
-(.NET 8, Dapper, MS SQL)
+# PartsInventoryManagement.Api
+(.NET 8, Dapper, MS SQL)<br>
 https://westeu-parts-inventory-management-api-v1.azurewebsites.net/api/v1
 
 Endpoints:
@@ -20,3 +17,10 @@ Endpoints:
   "partCategoryName": "string"
 }
 
+"DELETE: /PartCategories/{partCategoryId}" - delete part category
+
+"GET: /PartCategories/{partCategoryId}" - get part category by Id
+
+"GET: /PartCategories/{partCategoryName}" - get part category by full/partial name
+
+POST: /PartCategories/seed" - seed predefined data in part categories table
