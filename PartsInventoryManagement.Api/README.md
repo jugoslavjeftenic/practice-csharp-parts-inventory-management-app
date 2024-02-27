@@ -5,7 +5,8 @@ https://westeu-parts-inventory-management-api-v1.azurewebsites.net
 Endpoints:
 
 - /api/v1/Test<br>
-"GET: /api/v1/Test/AppIsRunning" - test if API is running<br>
+	- "GET: /api/v1/Test/AppIsRunning"
+	test if API is running<br>
 "GET: /api/v1/Test/DbConnection" - test if DB connection<br>
 
 - /api/v1/PartCategories<br>
